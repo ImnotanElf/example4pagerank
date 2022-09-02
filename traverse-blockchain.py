@@ -121,7 +121,7 @@ def main_process( start_number, end_number, args ):
             continue
         print( i )
         for tx in block[ 'transactions' ]:
-            tx_hash = tx[ 'hash' ]
+            tx_hash = tx[ 'hash' ].hex()
             tx_from   = tx['from']
             tx_to     = tx['to']
             tx_value = tx['value']
@@ -133,7 +133,7 @@ def main_process( start_number, end_number, args ):
     with open( res_path, 'w', encoding='utf-8' ) as f:
         for tx in res:
             for tx_info in tx:
-                f.write( tx_info + ',' )
+                f.write( tx_info+ ',' )
             f.write( '\n' )
     print( res_path )
 
@@ -159,17 +159,21 @@ def main():
     start = time.time()
     number_of_mp = args.mp_number
     print( "number of multiprocess: ", number_of_mp )
-    start_number = 291_2407
-    end_number   = 1550_0000
-    amounts = end_number - start_number
-    _processes = []
-    # print( 3 )
-    for index in range( 0, number_of_mp ):
-        _process = multiprocessing.Process( target=main_process, args=( start_number + int( index * amounts / number_of_mp ), start_number + ( index + 1 ) * int( amounts / number_of_mp ), args ) )
-        _process.start()
-        _processes.append(_process)
-    for _process in _processes:
-        _process.join()
+    raw_start_number = 291_2407
+    raw_end_number   = 291_3000
+    raw_amounts = raw_end_number - raw_start_number
+    for j in range( 100 ):
+        start_number = raw_start_number + j * int( raw_amounts / 100 )
+        end_number = raw_start_number + ( j + 1 ) * int( raw_amounts / 100 )
+        amounts = end_number - start_number
+        _processes = []
+        # print( 3 )
+        for index in range( 0, number_of_mp ):
+            _process = multiprocessing.Process( target=main_process, args=( start_number + int( index * amounts / number_of_mp ), start_number + ( index + 1 ) * int( amounts / number_of_mp ), args ) )
+            _process.start()
+            _processes.append(_process)
+        for _process in _processes:
+            _process.join()
     end = time.time()
     print( 'Cost time:', end - start )
 
