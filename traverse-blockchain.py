@@ -169,7 +169,7 @@ def main():
         _processes = []
         # print( 3 )
         for index in range( 0, number_of_mp ):
-            _process = multiprocessing.Process( target=main_process, args=( start_number + int( index * amounts / number_of_mp ), start_number + ( index + 1 ) * int( amounts / number_of_mp ), args ) )
+            _process = multiprocessing.Process( target=main_process, args=( start_number + index * int( amounts / number_of_mp ), start_number + ( index + 1 ) * int( amounts / number_of_mp ), args ) )
             _process.start()
             _processes.append(_process)
         for _process in _processes:
