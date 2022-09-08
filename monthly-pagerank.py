@@ -1,28 +1,41 @@
-import time, datetime
+from email.policy import default
+import time
 
 def datetime2timestamp( datetime_str ): # datetime_str = '2021-06-03 21:19:03'
-    # 转为时间数组
-    timeArray = time.strptime(datetime_str, "%Y-%m-%d %H:%M:%S")
-    # print(timeArray)
-    # timeArray可以调用tm_year等
-    # print(timeArray.tm_year)
-    #print(timeArray.tm_yday)
-    # 转为时间戳
-    timeStamp = int(time.mktime(timeArray))
-    #print(timeStamp)
+    timeArray = time.strptime( datetime_str, "%Y-%m-%d %H:%M:%S" )
+    timeStamp = int( time.mktime( timeArray ) )
     return timeStamp
 
-def timestamp2datetime( timestamp ): # unit: millisecond
-    time_local = time.localtime(timestamp / 1000)
-    print( "time_local: ", time_local )
-    # 转换成新的时间格式(精确到秒)
-    dt = time.strftime("%Y-%m-%d %H:%M:%S", time_local)
-    print(dt) #2021-11-09 09:46:48
-    d = datetime.datetime.fromtimestamp(timestamp / 1000)
-    print( d )
-    # 精确到毫秒
-    str1 = d.strftime("%Y-%m-%d %H:%M:%S.%f")
-    print(str1) #2021-11-09 09:46:48.000000
+def timestamp2datetime( timestamp ): # unit: second
+    time_local = time.localtime( timestamp )
+    dt = time.strftime( "%Y-%m-%d %H:%M:%S", time_local )
+    return dt
+
+def get_stamps( every_months = 1 ):
+    months = []  
+    for x in range( 2023, 2016, -1 ):
+        for y in range( 12, 0, -1 ):
+            months.append( f"{ x }-{ str( y ).rjust( 2, '0' ) }-01 00:00:00" )
+    stamps = [ datetime2timestamp( x ) for x in months ]
+    nowstamp = time.time()
+    month_index = 0
+    for i in range( len( stamps ) ):
+        if stamps[ i ] < nowstamp:
+            month_index = i
+            break
+    res = []
+    while ( month_index < len( stamps ) ):
+        res.append( stamps[ month_index : month_index + every_months + 1 ] )
+        month_index += every_months
+    res[ 0 ][ 0 ] = nowstamp
+    if ( len( res[ -1 ] ) == 1 ):
+        res.pop()
+    res = [ [ x[ 0 ], x[ -1 ] ] for x in res ]
+    return res
 
 if __name__ == "__main__":
-    timestamp2datetime( 1587983548 * 1000 )
+    a = timestamp2datetime( 1587983548 )
+    a = timestamp2datetime( time.time() )
+    print( a )
+    b = get_stamps( 3 )
+    print( b )
