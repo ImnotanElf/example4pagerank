@@ -13,8 +13,8 @@ def main():
             info = line.strip().split( ',' )
             addr = info[ 0 ]
             label = info[ 1 ]
-            labeled_dict[ addr ] = label
-            labeled_set.add( addr )
+            labeled_dict[ addr.lower() ] = label
+            labeled_set.add( addr.lower() )
     res = []
     count = 0
     count_labeled_txs = 0
@@ -25,9 +25,10 @@ def main():
             with open( res_path, 'w' ) as fw:
                 lines = fr.readlines()
                 count += len( lines )
+                print( len( lines ) )
                 for line in lines:
                     info = line.split( ',' )
-                    if ( info[ 0 ] in labeled_set or info[ 1 ] in labeled_set ):
+                    if ( info[ 0 ].lower() in labeled_set or info[ 1 ].lower() in labeled_set ):
                         count_labeled_txs += 1
                         fw.write( line )
     print( count, count_labeled_txs )

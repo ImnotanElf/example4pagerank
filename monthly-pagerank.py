@@ -12,9 +12,9 @@ def datetime2timestamp( datetime_str ): # datetime_str = '2021-06-03 21:19:03'
     #print(timeStamp)
     return timeStamp
 
-def timestamp2datetime( timestamp ):
+def timestamp2datetime( timestamp ): # unit: millisecond
     time_local = time.localtime(timestamp / 1000)
-    print( time_local )
+    print( "time_local: ", time_local )
     # 转换成新的时间格式(精确到秒)
     dt = time.strftime("%Y-%m-%d %H:%M:%S", time_local)
     print(dt) #2021-11-09 09:46:48
@@ -25,4 +25,4 @@ def timestamp2datetime( timestamp ):
     print(str1) #2021-11-09 09:46:48.000000
 
 if __name__ == "__main__":
-    timestamp2datetime( 1587983548 )
+    timestamp2datetime( 1587983548 * 1000 )
