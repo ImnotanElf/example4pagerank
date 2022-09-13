@@ -11,7 +11,7 @@ def main():
         with open( i, 'r' ) as fr:
             lines = fr.readlines()
             rate += len( lines )
-            print( "%0.2f %" % rate / 4152464.91 )
+            print( "%0.2f%%" % rate / 11497057.07 )
             for line in lines:
                 info = line.strip().split( ',' )
                 addr_from = info[ 0 ].lower()
