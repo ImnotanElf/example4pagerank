@@ -33,13 +33,10 @@ def init_test_data():
     y = [ _ % 8 for _ in range( 100 ) ]
     y = torch.tensor( y )
     x = torch.rand([100, nfeat])
-    print( x )
-    #print(node_features)
     rows = np.random.choice(100, 500)
     cols = np.random.choice(100, 500)
     new_rows = np.concatenate( [ rows, cols ] )
     new_cols = np.concatenate( [ cols, rows ] )
-    print( ( new_rows.shape ) )
     edge_index = torch.tensor([new_rows, new_cols]).long()
     edges_weight = torch.rand(1000,1).numpy()
     print( type( x ) )
