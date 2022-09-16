@@ -1,4 +1,4 @@
-import math, glob, os, shutil, argparse
+import math, glob, os, shutil, argparse, random, numpy
 
 def select_train_data( train_rate ):
     cate_dict = {}
@@ -12,6 +12,7 @@ def select_train_data( train_rate ):
                 cate_dict[ cate ] = 1
             else:
                 cate_dict[ cate ] += 1
+        lines = sorted( lines, key = lambda x : x.strip().split( ',' )[ 1 ] )
         with open( f'train-{ train_rate }-labeled.txt', 'w' ) as fw:
             index = 0
             while ( index < len( lines ) ):
@@ -21,8 +22,20 @@ def select_train_data( train_rate ):
                 cate_length = cate_dict[ cate ]
                 assert( 0 < train_rate and train_rate < 1 )
                 cate_train_length = math.ceil( cate_length * train_rate )
-                for i in range( cate_train_length ):
-                    fw.write( lines[ index + i ] )
+                rand_select = numpy.random.choice( a = cate_length, size = cate_train_length, replace = False, p = None )
+                print( "len( lines ): ", len( lines ) )
+                print( "index: ", index )
+                print( "rand_select: ", rand_select )
+                print( "cate_length: ", cate_length )
+                print( "cate: ", cate )
+                print( "addr: ", addr )
+                print( "train_rate", train_rate )
+                print( "cate_train_length: ", cate_train_length )
+                for i in rand_select:
+                    try:
+                        fw.write( lines[ index + i ] )
+                    except:
+                        print( index, i, index + i )
                 index += cate_length
 
 def select_train_txs( train_rate ):
@@ -32,7 +45,7 @@ def select_train_txs( train_rate ):
     print(u'正在处理............')
     labeled_dict = {}
     labeled_set = set()
-    with open( 'train-labeled.txt', 'r' ) as fr:
+    with open( f'train-{ train_rate }-labeled.txt', 'r' ) as fr:
         lines = fr.readlines()
         for line in lines:
             info = line.strip().split( ',' )
