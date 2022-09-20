@@ -54,51 +54,99 @@ def get_addr_id_dict():
     return map_addr_id
 
 def get_txt_list():
-    path = "/data/ethereum-data/txs/*.txt"
+    path = "./data/*.txt"
     txt_list = glob.glob( path ) #查看同文件夹下的txt文件数
     print( u'共发现%s个txt文件' % len( txt_list ) )
     print( u'正在处理............' )
+    txt_list = sorted( txt_list, key = lambda x : x.split( '/' )[ -1 ].split( '-' )[ 0 ] )
     return txt_list
 
-def process( timestamp ):
+def is_ordered( nums ):
+    if len( nums ) < 2:
+        return True
+    for i in range( len( nums ) - 1 ):
+        if ( nums[ i + 1 ] < nums[ i ] ):
+            return False
+    return True
+
+def binary_search( nums, target_stamp, left, right, is_smaller ):
+    while ( left < right ):
+        mid = left + ( right - left ) // 2
+        mid_stamp = nums[ mid ]
+        if is_smaller:
+            if target_stamp < mid_stamp:
+                right = mid
+            else:
+                left = mid + 1
+        else:
+            if mid_stamp < target_stamp:
+                left = mid + 1
+            else:
+                right = mid
+    return max( 0, left - 1 ) if is_smaller else min( right, len( nums ) - 1 )
+
+def process():
     txt_list = get_txt_list()
-    sorted( txt_list, key = lambda x : int( x.split( '/' )[ -1 ].split( '-' )[ 0 ] ) )
+    nums = [ int( x.strip().split( '/' )[ -1 ].split( '-' )[ 0 ] ) for x in txt_list ]
+    assert( is_ordered( nums ) )
+    
+    timestamps = get_stamps()
 
-    G1 = nx.Graph()
-    rate = 0
-    count_self = 0
-    for i in txt_list: #循环读取同文件夹下的txt文件
-        with open( i, 'r' ) as fr:
-            lines = fr.readlines()
-            rate += len( lines )
-            info_last  = lines[ -1 ].strip().split( ',' )
-            info_first = lines[  0 ].strip().split( ',' )
-            if int( info_last[ 4 ] ) < timestamp:
-                continue
-            print( "{:0.2f}%".format( rate / 11497057.07 ) )
-            for line in lines:
-                info = line.strip().split( ',' )
-                tx_from  = info[ 0 ].lower()
-                tx_to    = info[ 1 ].lower()
-                tx_value = int( info[ 2 ] )
-                tx_blockheight = int( info[ 3 ] ) 
-                tx_timestamp = int( info[ 4 ] )
-                if tx_timestamp < timestamp:
-                    continue
-                if tx_from == '' or tx_to == '':
-                    count += 1
-                    break
-                G1.add_edge( tx_from, tx_to, weight = 1 )
-    print( "Number of nodes:", len( G1.nodes() ) )
-    print( "count_self: ", count_self )
-    # print( "len( map ): ", len( map_addr_id ) )
+    for i in range( 8, len( timestamps ) - 1 ):
+        G1 = nx.Graph()
+        count = 0
+        
+        start_stamp = timestamps[ i ]
+        end_stamp = timestamps[ i + 1 ]
+        start_datetime = timestamp2datetime( start_stamp )
+        end_datetime = timestamp2datetime( end_stamp )
 
-    pr = nx.pagerank(G1, alpha=0.85, personalization=None,
-                max_iter=100000, tol=1.0e-6, nstart=None, weight='weight',
-                dangling=None)
-    sorted_pr = sorted( pr.items(), key = lambda x : x[ 1 ] )
-    for i in range( 10 ):
-        print( sorted_pr[ -1 - i ] )
+        print( "start-->end: ", start_datetime, "-->", end_datetime )
+
+        index_left  = binary_search( nums, start_stamp, 0, len( txt_list ), is_smaller = True )
+        print( "left:  ", index_left )
+        index_right = binary_search( nums, end_stamp,   0, len( txt_list ), is_smaller = False )
+        print( "right: ", index_right )
+        for j in range( index_left, index_right + 1 ):
+            with open( txt_list[ j ], 'r' ) as fr:
+                lines = fr.readlines()
+                for line in lines:
+                    info = line.strip().split( ',' )
+                    tx_from  = info[ 0 ].lower()
+                    tx_to    = info[ 1 ].lower()
+                    tx_value = int( info[ 2 ] )
+                    tx_blockheight = int( info[ 3 ] ) 
+                    tx_timestamp = int( info[ 4 ] )
+                    if tx_timestamp < start_stamp or end_stamp < tx_timestamp:
+                        continue
+                    if tx_from == 'none' and tx_to != 'none':
+                        count += 1
+                        G1.add_edge( tx_to, tx_to, weight = 1 )
+                        continue
+                    if tx_from != 'none' and tx_to == 'none':
+                        count += 1
+                        G1.add_edge( tx_from, tx_from, weight = 1 )
+                        continue
+                    G1.add_edge( tx_from, tx_to, weight = 1 )
+        print( "Number of nodes:", len( G1.nodes() ) )
+        print( "count: ", count )
+
+        pr = nx.pagerank(G1, alpha=0.85, personalization=None,
+                    max_iter=100000, tol=1.0e-6, nstart=None, weight='weight',
+                    dangling=None)
+        sorted_pr = sorted( pr.items(), key = lambda x : x[ 1 ] )
+        try:
+            for i in range( 10 ):
+                print( sorted_pr[-1 - i] )
+        except Exception as e:
+            print( e )
+        with open( f"./outs/{ start_datetime.replace( ' ', '-' ) }---{ end_datetime.replace( ' ', '-' ) }.txt", 'w' ) as fw:
+            for i in range( len( sorted_pr ) ):
+                fw.write( str( sorted_pr[ -1 - i ] ) + '\n' )
+        with open( f"./outs/{ start_stamp }-{ end_stamp }.txt", 'w' ) as fw:
+            for i in range( len( sorted_pr ) ):
+                fw.write( str( sorted_pr[ -1 - i ] ) + '\n' )
+
 
 def main():
     parser = argparse.ArgumentParser( description='pagerank', formatter_class=argparse.ArgumentDefaultsHelpFormatter )
@@ -109,7 +157,10 @@ def main():
     timestamp = datetime2timestamp( datetime )
     # print( timestamp )
     
-    process( timestamp )
+    process()
 
 if __name__ == "__main__":
     main()
+    # last_stamp = 1660716295
+    # last_datetime = timestamp2datetime( last_stamp )
+    # print( last_datetime ) # 2022-08-17 14:04:55
