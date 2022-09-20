@@ -11,7 +11,7 @@ def main():
         with open( i, 'r' ) as fr:
             lines = fr.readlines()
             rate += len( lines )
-            print( "%0.2f%%" % rate / 11497057.07 )
+            print( "{:0.2f}%".format( rate / 11497057.07 ) )
             for line in lines:
                 info = line.strip().split( ',' )
                 addr_from = info[ 0 ].lower()
@@ -27,3 +27,6 @@ def main():
             fw.write( x + ',' + str( count ) + '\n' )
             count += 1
     print( "Write success!", rate )
+
+if __name__ == "__main__":
+    main()
