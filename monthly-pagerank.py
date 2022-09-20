@@ -45,7 +45,9 @@ def get_addr_id_dict():
     return map_addr_id
 
 def process( timestamp ):
-    map_addr_id = get_addr_id_dict()
+    print( "Read map-addr-id..." )
+    # map_addr_id = get_addr_id_dict()
+    print( "Read map-addr-id done." )
 
     path = "/data/ethereum-data/txs/*.txt"
     txt_list = glob.glob( path ) #查看同文件夹下的txt文件数
@@ -59,6 +61,10 @@ def process( timestamp ):
         with open( i, 'r' ) as fr:
             lines = fr.readlines()
             rate += len( lines )
+            info_last  = lines[ -1 ].strip().split( ',' )
+            info_first = lines[  0 ].strip().split( ',' )
+            if int( info_last[ 4 ] ) < timestamp:
+                continue
             print( "{:0.2f}%".format( rate / 11497057.07 ) )
             for line in lines:
                 info = line.strip().split( ',' )
@@ -68,13 +74,14 @@ def process( timestamp ):
                 tx_blockheight = int( info[ 3 ] )
                 tx_timestamp = int( info[ 4 ] )
                 if tx_timestamp < timestamp:
-                    break
+                    continue
                 if tx_from == '' or tx_to == '':
                     count += 1
                     break
-                G1.add_edge( map_addr_id[ tx_from ], map_addr_id[ tx_to ], weight = 1 )
+                G1.add_edge( tx_from, tx_to, weight = 1 )
     print( "Number of nodes:", len( G1.nodes() ) )
     print( "count_self: ", count_self )
+    # print( "len( map ): ", len( map_addr_id ) )
 
     pr = nx.pagerank(G1, alpha=0.85, personalization=None,
                 max_iter=100000, tol=1.0e-6, nstart=None, weight='weight',
@@ -90,6 +97,7 @@ def main():
 
     datetime = args.datetime
     timestamp = datetime2timestamp( datetime )
+    # print( timestamp )
     
     process( timestamp )
 
