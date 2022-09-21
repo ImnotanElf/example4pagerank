@@ -146,6 +146,8 @@ def process():
         with open( f"./outs/{ start_stamp }-{ end_stamp }.txt", 'w' ) as fw:
             for i in range( len( sorted_pr ) ):
                 fw.write( str( sorted_pr[ -1 - i ] ) + '\n' )
+        G1.clear()
+        print( "Number of nodes:", len( G1.nodes() ) )
 
 
 def main():
