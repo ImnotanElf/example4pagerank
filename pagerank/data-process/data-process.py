@@ -52,5 +52,47 @@ def get_stamps():
             fw.write( str( s ) + ',' + str( timestamp2datetime( s ) ) + '\n' )
     return stamps
 
+def get_final_list():
+    path = "/data/dev/pagerank/outs/*.txt"
+    txt_list = glob.glob( path ) #查看同文件夹下的txt文件数
+    print( u'共发现%s个txt文件' % len( txt_list ) )
+    print( u'正在处理............' )
+    dict_list  = []
+    for i in txt_list:
+        if i.split( '-' )[ -1 ] == "cpp.txt" and i.split( '-' )[ -2 ] == "dict" :
+            dict_list.append( i )
+
+    path = "/data/dev/pagerank/outs/*.out"
+    txt_list = glob.glob( path ) #查看同文件夹下的txt文件数
+    print( u'共发现%s个out文件' % len( txt_list ) )
+    print( u'正在处理............' )
+    outs_list = []
+    for i in txt_list:
+        if i.split( '-' )[ -1 ] == "cpp.txt.out" and i.split( '-' )[ -2 ] == "edges" :
+            outs_list.append( i )
+    
+    print( len( outs_list ) )
+    print( len( dict_list ) )
+    for i in outs_list:
+        for j in dict_list:
+            if i.split( "---" )[ 0 ] == j.split( "---" )[ 0 ]:
+                id_addr_d = {}
+                with open( j, 'r' ) as frj:
+                    j_lines = frj.readlines()
+                    for index in range( len( j_lines ) ):
+                        info = j_lines[ index ].split( ',' )
+                        addr = info[ 0 ]
+                        id_addr_d[ index ] = addr
+                with open( i, 'r' ) as fri:
+                    res_d = {}
+                    i_lines = fri.readlines()
+                    for index in range( len( i_lines ) ):
+                        if index in id_addr_d:
+                            res_d[ id_addr_d[ index ] ] = float( i_lines[ index ].strip() )
+                    s_pr = sorted( res_d.items(), key = lambda x : x[ 1 ], reverse = True )
+                    with open( j + ".finalout", 'w' ) as fw:
+                        for pr in s_pr:
+                            fw.write( str( pr[ 0 ] ) + ',' + str( pr[ 1 ] ) + '\n' )   
+
 if __name__ == "__main__":
-    get_cpp_list()
+    get_final_list()

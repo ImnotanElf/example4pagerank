@@ -220,6 +220,7 @@ int main(int argc, char **argv) {
         }
         
         for ( int i = 0; i < lines_edges.size(); ++ i ) {
+            cout << lines_edges[ i ] << endl;
             t.read_file( lines_edges[ i ].c_str() );
             cerr << "Calculating pagerank..." << endl;
             t.pagerank();
