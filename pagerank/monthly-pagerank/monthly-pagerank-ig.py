@@ -1,5 +1,5 @@
-import time, glob, argparse
-import networkx as nx
+import time, glob, argparse, time
+import igraph as ig
 
 def datetime2timestamp( datetime_str ): # datetime_str = '2021-06-03 21:19:03'
     timeArray = time.strptime( datetime_str, "%Y-%m-%d %H:%M:%S" )
@@ -83,7 +83,7 @@ def binary_search( nums, target_stamp, left, right, is_smaller ):
                 left = mid + 1
             else:
                 right = mid
-    return max( 0, left - 1 ) if is_smaller else min( right, len( nums ) - 1 )
+    return min( max( 0, left - 1 ), len( nums ) - 1 ) if is_smaller else min( right, len( nums ) - 1 )
 
 def process():
     txt_list = get_txt_list()
@@ -92,8 +92,11 @@ def process():
     
     timestamps = get_stamps()
 
-    for i in range( 8, len( timestamps ) - 1 ):
-        G1 = nx.Graph()
+    for i in range( 0, len( timestamps ) - 1 ):
+        G1 = ig.Graph()
+        G1.clear()
+        G1.to_directed()
+        vertices = set()
         count = 0
         
         start_stamp = timestamps[ i ]
@@ -107,7 +110,12 @@ def process():
         print( "left:  ", index_left )
         index_right = binary_search( nums, end_stamp,   0, len( txt_list ), is_smaller = False )
         print( "right: ", index_right )
-        for j in range( index_left, index_right + 1 ):
+        ad2id_d = {}
+        id2ad_d = {}
+        ad_count = 0
+        nedges = 0
+        # for j in range( index_left, index_right + 1 ):
+        for j in range( index_left, index_right ):
             with open( txt_list[ j ], 'r' ) as fr:
                 lines = fr.readlines()
                 for line in lines:
@@ -121,36 +129,74 @@ def process():
                         continue
                     if tx_from == 'none' and tx_to != 'none':
                         count += 1
-                        G1.add_edge( tx_to, tx_to, weight = 1 )
+                        if tx_to not in ad2id_d:
+                            ad2id_d[ tx_to ] = ad_count
+                            id2ad_d[ ad_count ] = tx_to
+                            if ad_count not in vertices:
+                                vertices.add( ad_count )
+                                G1.add_vertex( ad_count )
+                            G1.add_edge( ad_count, ad_count )
+                            ad_count += 1
+                            nedges += 1
                         continue
                     if tx_from != 'none' and tx_to == 'none':
                         count += 1
-                        G1.add_edge( tx_from, tx_from, weight = 1 )
+                        if tx_to not in ad2id_d:
+                            ad2id_d[ tx_from ] = ad_count
+                            id2ad_d[ ad_count ] = tx_from
+                            if ad_count not in vertices:
+                                vertices.add( ad_count )
+                                G1.add_vertex( ad_count )
+                            G1.add_edge( ad_count, ad_count )
+                            ad_count += 1
+                            nedges += 1
                         continue
-                    G1.add_edge( tx_from, tx_to, weight = 1 )
-        print( "Number of nodes:", len( G1.nodes() ) )
-        print( "count: ", count )
+                    if tx_to not in ad2id_d:
+                        ad2id_d[ tx_to ] = ad_count
+                        if ad_count not in vertices:
+                            vertices.add( ad_count )
+                            G1.add_vertex( ad_count )
+                        id2ad_d[ ad_count ] = tx_to
+                        ad_count += 1
+                    if tx_from not in ad2id_d:
+                        ad2id_d[ tx_from ] = ad_count
+                        if ad_count not in vertices:
+                            vertices.add( ad_count )
+                            G1.add_vertex( ad_count )
+                        id2ad_d[ ad_count ] = tx_from
+                        ad_count += 1
+                    G1.add_edge( ad2id_d[ tx_from ], ad2id_d[ tx_to ] )
+                    nedges += 1
+        print( i, "th number of edges: ", nedges )
+        print( i, "th number of addrs: ", len( ad2id_d ) )
+        print( i, "th count of loop: ", count )
+        with open( f"./outs/{ start_datetime.replace( ' ', '-' ) }---{ end_datetime.replace( ' ', '-' ) }-dict-igraph.txt", 'w' ) as fw:
+            for k, v in ad2id_d.items():
+                fw.write( str( k ) + ',' + str( v ) + '\n' )
+        ad2id_d.clear()
 
-        pr = nx.pagerank(G1, alpha=0.85, personalization=None,
-                    max_iter=100000, tol=1.0e-6, nstart=None, weight='weight',
-                    dangling=None)
-        sorted_pr = sorted( pr.items(), key = lambda x : x[ 1 ] )
+        pr = G1.pagerank( vertices=None, directed=True, damping = 0.85, weights = None, arpack_options = None, implementation = 'prpack', niter = 100000, eps = 0.000001 )
+        
+        print( i, "th Number of vertices:", len( pr ) )
+        print( i, "th Number of edges:", len( G1.get_edgelist() ) )
         try:
             for i in range( 10 ):
-                print( sorted_pr[-1 - i] )
+                print( pr[ i ] )
         except Exception as e:
             print( e )
-        with open( f"./outs/{ start_datetime.replace( ' ', '-' ) }---{ end_datetime.replace( ' ', '-' ) }.txt", 'w' ) as fw:
-            for i in range( len( sorted_pr ) ):
-                fw.write( str( sorted_pr[ -1 - i ] ) + '\n' )
-        with open( f"./outs/{ start_stamp }-{ end_stamp }.txt", 'w' ) as fw:
-            for i in range( len( sorted_pr ) ):
-                fw.write( str( sorted_pr[ -1 - i ] ) + '\n' )
+        with open( f"./outs/{ start_datetime.replace( ' ', '-' ) }---{ end_datetime.replace( ' ', '-' ) }-igraph.txt", 'w' ) as fw:
+            for i in range( len( pr ) ):
+                fw.write( str( pr[ i ]) + '\n' )
+        with open( f"./outs/{ start_stamp }-{ end_stamp }-igraph.txt", 'w' ) as fw:
+            for i in range( len( pr ) ):
+                fw.write( str( pr[ i ]) + '\n' )
         G1.clear()
-        print( "Number of nodes:", len( G1.nodes() ) )
+
+        print( "Number of nodes:", len( pr ), "next 42 days..." )
 
 
 def main():
+    '''
     parser = argparse.ArgumentParser( description='pagerank', formatter_class=argparse.ArgumentDefaultsHelpFormatter )
     parser.add_argument( '--datetime', type = str, default = '2021-06-03 21:19:03', help='datetime' )
     args = parser.parse_args()
@@ -158,6 +204,7 @@ def main():
     datetime = args.datetime
     timestamp = datetime2timestamp( datetime )
     # print( timestamp )
+    '''
     
     process()
 
