@@ -94,5 +94,30 @@ def get_final_list():
                         for pr in s_pr:
                             fw.write( str( pr[ 0 ] ) + ',' + str( pr[ 1 ] ) + '\n' )   
 
+def get_top_n( top_n ):
+    path = "/data/dev/pagerank/outs/finalout/*.finalout"
+    csv_list = glob.glob( path ) #查看同文件夹下的txt文件数
+    print( u'共发现%s个csv文件' % len( csv_list ) )
+    print( u'正在处理............' )
+    for i in csv_list:
+        with open( i, 'r' ) as fr:
+            lines = fr.readlines()
+            with open( i + f".top{ top_n }", 'w' ) as fw:
+                for i in range( top_n ):
+                    fw.write( lines[ i ] )
+
+def merge_csv():
+    path = "/data/dev/pagerank/outs/finalout/top_n/*.top100"
+    csv_list = glob.glob( path ) #查看同文件夹下的txt文件数
+    print( u'共发现%s个csv文件' % len( csv_list ) )
+    print( u'正在处理............' )
+    with open( "merge_top100.csv", 'w' ) as fw:
+        for i in csv_list:
+            with open( i, 'r' ) as fr:
+                date_t = i.split( '/' )[ -1 ].split( "-dict" )[ 0 ]
+                lines = fr.readlines()    
+                for line in lines:
+                    fw.write( line.strip() + ',' + date_t + '\n' )
+
 if __name__ == "__main__":
-    get_final_list()
+    merge_csv()
