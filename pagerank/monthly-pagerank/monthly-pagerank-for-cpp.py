@@ -91,7 +91,8 @@ def process():
     
     timestamps = get_stamps()
 
-    for i in range( 0, len( timestamps ) - 1 ):
+    for i in range( 0, len( timestamps ) - 2 ):
+    # for i in [ 12, 7 ]:
         vertices = set()
         count = 0
         
@@ -110,8 +111,9 @@ def process():
         ad2id_d = {}
         ad_count = 0
         edges = []
-        # for j in range( index_left, index_right + 1 ):
-        for j in range( index_left, index_right ):
+        for j in range( index_left, index_right + 1 ):
+            assert( len( ad2id_d ) == ad_count )
+            assert( "none" not in ad2id_d )
             with open( txt_list[ j ], 'r' ) as fr:
                 lines = fr.readlines()
                 for line in lines:
@@ -123,19 +125,22 @@ def process():
                     tx_timestamp = int( info[ 4 ] )
                     if tx_timestamp < start_stamp or end_stamp < tx_timestamp:
                         continue
+                    if tx_from == "none" and tx_to == "none":
+                        print( "wtf" )
+                        ee = 1 / 0
                     if tx_from == 'none' and tx_to != 'none':
                         count += 1
                         if tx_to not in ad2id_d:
                             ad2id_d[ tx_to ] = ad_count
-                            edges.append( [ ad_count, ad_count ] )
                             ad_count += 1
+                        edges.append( [ ad2id_d[ tx_to ], ad2id_d[ tx_to ] ] )
                         continue
                     if tx_from != 'none' and tx_to == 'none':
                         count += 1
-                        if tx_to not in ad2id_d:
+                        if tx_from not in ad2id_d:
                             ad2id_d[ tx_from ] = ad_count
-                            edges.append( [ ad_count, ad_count ] )
                             ad_count += 1
+                        edges.append( [ ad2id_d[ tx_from ] , ad2id_d[ tx_from ]  ] )
                         continue
                     if tx_to not in ad2id_d:
                         ad2id_d[ tx_to ] = ad_count

@@ -1,3 +1,4 @@
+
 import time, glob
 
 def datetime2timestamp( datetime_str ): # datetime_str = '2021-06-03 21:19:03'
@@ -73,7 +74,10 @@ def get_final_list():
     
     print( len( outs_list ) )
     print( len( dict_list ) )
+    test_count = 0
     for i in outs_list:
+        print( test_count )
+        test_count += 1
         for j in dict_list:
             if i.split( "---" )[ 0 ] == j.split( "---" )[ 0 ]:
                 id_addr_d = {}
@@ -86,6 +90,13 @@ def get_final_list():
                 with open( i, 'r' ) as fri:
                     res_d = {}
                     i_lines = fri.readlines()
+                    try:
+                        assert( len( i_lines ) == len( id_addr_d ) )
+                    except:
+                        print( i )
+                        print( j )
+                        print( len( i_lines ) )
+                        print( len( id_addr_d ) )
                     for index in range( len( i_lines ) ):
                         if index in id_addr_d:
                             res_d[ id_addr_d[ index ] ] = float( i_lines[ index ].strip() )
@@ -119,5 +130,74 @@ def merge_csv():
                 for line in lines:
                     fw.write( line.strip() + ',' + date_t + '\n' )
 
+def generate_edges():
+    path = "/data/ethereum-data/txs/*.txt"
+    txt_list = glob.glob( path ) #查看同文件夹下的txt文件数
+    print( u'共发现%s个out文件' % len( txt_list ) )
+    print( u'正在处理............' )
+    ad2id = {}
+    fw_ad = open( 'all-ad2id-final.csv', 'w' )
+    ad_count = 0
+    ed_count = 0
+    te_count = 0
+    txt_count = 0
+    with open( 'all-edges.csv', 'w' ) as fw_ed:
+        for i in txt_list:
+            assert( ad_count == len( ad2id ) )
+            with open( i, 'r' ) as fr:
+                print( txt_count )
+                txt_count += 1
+                lines = fr.readlines()
+                for j in range( len( lines ) ):
+                    assert( ad_count == len( ad2id ) )
+                    assert( "none" not in ad2id )
+                    ed_count += 1
+                    info = lines[ j ].strip().split( ',' )
+                    tx_from  = info[ 0 ].lower()
+                    tx_to    = info[ 1 ].lower()
+                    tx_value = int( info[ 2 ] )
+                    tx_blockheight = int( info[ 3 ] )
+                    if tx_from == "none" and tx_to == "none":
+                        print( "wtf" )
+                        ee = 1 / 0
+                    if tx_from == 'none' and tx_to != 'none':
+                        if tx_to not in ad2id:
+                            ad2id[ tx_to ] = ad_count
+                            fw_ad.write( str( ad_count ) + '\n' )
+                            ad_count += 1
+                        fw_ed.write( str( ad2id[ tx_to ]  ) + ',' + str( ad2id[ tx_to ] ) + '\n' )
+                        te_count += 1
+                        continue
+                    if tx_from != 'none' and tx_to == 'none':
+                        if tx_from not in ad2id:
+                            ad2id[ tx_from ] = ad_count
+                            fw_ad.write( str( ad_count ) + '\n' )
+                            ad_count += 1
+                        fw_ed.write( str( ad2id[ tx_from ]  ) + ',' + str( ad2id[ tx_from ] ) + '\n' )
+                        te_count += 1
+                        continue
+                    if tx_to not in ad2id:
+                        ad2id[ tx_to ] = ad_count
+                        fw_ad.write( str( ad_count ) + '\n' )
+                        ad_count += 1
+                    if tx_from not in ad2id:
+                        ad2id[ tx_from ] = ad_count
+                        fw_ad.write( str( ad_count ) + '\n' )
+                        ad_count += 1
+                    fw_ed.write( str( ad2id[ tx_from ]  ) + ',' + str( ad2id[ tx_to ] ) + '\n' )
+                    te_count += 1
+    print( "Read done!" )
+    print( "number of addrs: ", len( ad2id ) )
+    print( "number of addrs: ", ad_count )
+    print( "number of edges: ", ed_count )
+    print( "number of tests: ", te_count )
+    fw_ad.close()
+    with open( 'all-ad2id.csv', 'w' ) as fw:
+        for k, v in ad2id.items():
+            fw.write( str( k ) + ',' + str( v ) + '\n' )
+    print( "Write all-ad2id.csv done!" )
+
+
 if __name__ == "__main__":
-    merge_csv()
+    # generate_edges()
+    get_final_list()
