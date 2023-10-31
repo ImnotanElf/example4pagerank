@@ -454,9 +454,9 @@ const void Table::print_pagerank_v( string out_path ) {
         sum += pr[i];
     }
     out.close();
-    sort( pr.begin(), pr.end() );
-    for ( int i = 0; i < 10; ++ i ) {
-        cout << pr[ pr.size() - 1 - i ] << endl;
+    // sort( pr.begin(), pr.end() );
+    for ( int i = 0; i < 10 && i < pr.size(); ++ i ) {
+        cout << pr[ i ] << endl;
     }
     cerr << "sum of pr = " << sum << " " << endl;
 }
